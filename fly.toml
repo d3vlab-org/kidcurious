@@ -1,0 +1,65 @@
+# Fly.io configuration for KidCurious monorepo
+app = "kidcurious"
+primary_region = "fra"
+
+[build]
+
+[env]
+  APP_ENV = "production"
+  APP_URL = "https://kidcurious.fly.dev"
+  FRONTEND_URL = "https://kidcurious.fly.dev"
+  CORS_ALLOWED_ORIGINS_PATTERN = "https://*.fly.dev"
+  LOG_CHANNEL = "stderr"
+  LOG_LEVEL = "info"
+  LOG_STDERR_FORMATTER = "Monolog\\Formatter\\JsonFormatter"
+  DB_CONNECTION = "pgsql"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/health"
+
+[checks]
+  [checks.health]
+    grace_period = "10s"
+    interval = "30s"
+    method = "get"
+    path = "/health"
+    port = 8080
+    timeout = "5s"
+    type = "http"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 1024
+
+[deploy]
+  release_command = "php artisan migrate --force"
+
+[[statics]]
+  guest_path = "/var/www/html/public/frontend"
+  url_prefix = "/frontend"
+
+# Environment variables that will be set from secrets
+# Run these commands to set them:
+# fly secrets set APP_KEY=base64:your-app-key
+# fly secrets set OPENAI_API_KEY=your-openai-key
+# fly secrets set GOOGLE_API_KEY=your-google-key
+
+# Fly Postgres Integration
+# 1. Create Postgres cluster: fly postgres create --name kidcurious-db --region fra
+# 2. Attach database: fly postgres attach --app kidcurious-db
+# This will automatically set DATABASE_URL environment variable
+# 3. Optional: Set custom DB credentials via secrets:
+#    fly secrets set DB_PASSWORD=your-custom-password

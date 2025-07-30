@@ -1,0 +1,75 @@
+services:
+  backend:
+    build: 
+      context: ./KidCurious-backend
+      dockerfile: Dockerfile.dev
+    container_name: kidcurious-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./KidCurious-backend:/var/www/html
+      - ./KidCurious-backend/storage/app:/var/www/html/storage/app
+      - ./KidCurious-backend/storage/logs:/var/www/html/storage/logs
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_CONNECTION=pgsql
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=kidcurious
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=secret
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - QUEUE_CONNECTION=redis
+      - BROADCAST_DRIVER=redis
+      - CACHE_DRIVER=redis
+      - SESSION_DRIVER=redis
+    networks:
+      - kidcurious-network
+
+  frontend:
+    build: ./KidCurious-front
+    container_name: kidcurious-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./KidCurious-front:/app
+      - /app/node_modules
+    networks:
+      - kidcurious-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: kidcurious-postgres
+    environment:
+      POSTGRES_DB: kidcurious
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - kidcurious-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: kidcurious-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - kidcurious-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  kidcurious-network:
+    driver: bridge
