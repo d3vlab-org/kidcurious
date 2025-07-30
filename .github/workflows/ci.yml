@@ -1,0 +1,130 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: kidcurious_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+        extensions: pdo, pdo_pgsql, bcmath, gd, xml, zip, pcntl, sockets, redis
+
+    - name: Copy environment file
+      run: cp KidCurious-backend/.env.example KidCurious-backend/.env
+      
+    - name: Install backend dependencies
+      working-directory: ./KidCurious-backend
+      run: composer install --prefer-dist --no-progress
+
+    - name: Generate application key
+      working-directory: ./KidCurious-backend
+      run: php artisan key:generate
+
+    - name: Run database migrations
+      working-directory: ./KidCurious-backend
+      run: php artisan migrate --force
+      env:
+        DB_CONNECTION: pgsql
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_DATABASE: kidcurious_test
+        DB_USERNAME: postgres
+        DB_PASSWORD: secret
+
+    - name: Run backend tests
+      working-directory: ./KidCurious-backend
+      run: php artisan test
+      env:
+        DB_CONNECTION: pgsql
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_DATABASE: kidcurious_test
+        DB_USERNAME: postgres
+        DB_PASSWORD: secret
+
+    - name: Check code formatting
+      working-directory: ./KidCurious-backend
+      run: ./vendor/bin/pint --test
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: KidCurious-front/package-lock.json
+
+    - name: Install frontend dependencies
+      working-directory: ./KidCurious-front
+      run: npm ci
+
+    - name: Run ESLint
+      working-directory: ./KidCurious-front
+      run: npm run lint
+
+    - name: Check Prettier formatting
+      working-directory: ./KidCurious-front
+      run: npx prettier --check .
+
+    - name: Run frontend tests
+      working-directory: ./KidCurious-front
+      run: npm test
+
+    - name: Build frontend
+      working-directory: ./KidCurious-front
+      run: npm run build
+
+  deploy:
+    needs: [backend-tests, frontend-tests]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Fly.io CLI
+      uses: superfly/flyctl-actions/setup-flyctl@master
+
+    - name: Deploy to Fly.io
+      run: flyctl deploy --remote-only
+      env:
+        FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

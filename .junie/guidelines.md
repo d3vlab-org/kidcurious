@@ -1,161 +1,45 @@
-# KidCurious - Kids Q&A AI Application Guidelines
+# KidCurious – Project Guidelines for Junie
 
-## Project Overview
+## Overview
+KidCurious is a Q&A AI application designed for children, providing safe, educational and engaging answers to their questions. The platform is hosted on Fly.io and accessible at `https://kidcurious.click` (frontend) and `https://api.kidcurious.click` (API).
 
-KidCurious is a production-ready Kids Q&A AI application designed to provide safe, educational, and engaging responses to children's questions. The application uses Domain-Driven Architecture with a modular approach to ensure scalability and maintainability.
+## Technology Stack
+- **Backend**: Laravel 12 (PHP 8.3) with Octane for performance. The backend follows a Domain‑Driven Design structure. OpenAI API is used for generating answers, and Redis is used for caching and queueing. Supabase PostgreSQL serves as the database. Authentication is delegated to Supabase Auth (JWT tokens).
+- **Frontend**: React (TypeScript) built with Vite and styled using Tailwind CSS 4.0. It communicates with the backend via Axios and uses Supabase JS for authentication and user management.
+- **Database**: Supabase PostgreSQL cluster. No local DB is required in development or production; the backend uses Supabase credentials via environment variables.
+- **Hosting**: Fly.io. The backend runs on port 8080 behind Nginx, and the frontend is served statically. TLS is terminated by Fly.io.
 
-### Key Features
-- AI-powered question answering for kids
-- Content moderation for child safety
-- Real-time communication via WebSockets
-- Media handling capabilities
-- Authentication and authorization system
+## Domain Structure
+The backend is organized into the following packages under `packages/`:
+- `auth-service`: handles Supabase-based registration, login and JWT verification.
+- `question-service`: models questions and answers and provides endpoints to submit questions.
+- `moderation-service`: filters AI responses to ensure child safety.
+- `llm-gateway`: integrates with the OpenAI API and passes results to the moderation service.
+- `media-service`: (planned) handles audio and image uploads from users.
 
-## Architecture & Technology Stack
+Each package should include its own service classes, repositories, controllers and Pest tests.
 
-### Backend (KidCurious-backend)
-- **Framework**: Laravel 12.0 with PHP 8.3
-- **Architecture**: Domain-Driven Design with modular packages
-- **Performance**: Laravel Octane for enhanced performance
-- **Database**: PostgreSQL 15
-- **Cache**: Redis (via Predis)
-- **AI Integration**: OpenAI API client
-- **External APIs**: Google API client
-- **Real-time**: WebSockets (Laravel WebSockets, Pusher, Ratchet/Pawl)
-- **Testing**: Pest PHP testing framework
-- **Code Quality**: Laravel Pint for code formatting
-
-### Frontend
-- **Primary**: Laravel + Vite integration with TailwindCSS 4.0
-- **Secondary**: React/TypeScript application (KidCurious-front) - in development
-- **Styling**: TailwindCSS 4.0
-- **HTTP Client**: Axios
-- **Database**: Supabase integration
-
-### Infrastructure
-- **Containerization**: Docker with docker-compose
-- **Services**: Backend (port 8000), Frontend (port 5173), PostgreSQL (port 5432)
-
-## Project Structure
-
-```
-KidCurious/
-├── KidCurious-backend/          # Laravel backend application
-│   ├── app/                     # Main application code
-│   ├── packages/                # Custom domain packages
-│   │   ├── auth-service/        # Authentication & authorization
-│   │   ├── question-service/    # Question handling logic
-│   │   ├── moderation-service/  # Content moderation
-│   │   ├── llm-gateway/         # AI/LLM integration
-│   │   └── media-service/       # Media processing
-│   ├── tests/                   # Test files
-│   └── docker/                  # Docker configuration
-├── KidCurious-front/            # React frontend (in development)
-│   ├── components/              # React components
-│   ├── contexts/                # React contexts
-│   ├── services/                # API services
-│   └── utils/                   # Utility functions
-└── docker-compose.yml           # Docker orchestration
-```
-
-## Development Setup
-
-### Prerequisites
-- Docker and Docker Compose
-- PHP 8.3+ (for local development)
-- Node.js (for frontend assets)
-- Composer
-
-### Getting Started
-
-1. **Clone and Setup**:
-   ```bash
-   git clone <repository-url>
-   cd KidCurious
-   ```
-
-2. **Environment Configuration**:
-   - Copy `.env.example` to `.env` in backend directory
-   - Configure database, API keys, and other environment variables
-
-3. **Docker Development**:
-   ```bash
-   docker-compose up -d
-   ```
-   This will start:
-   - Backend on http://localhost:8000
-   - Frontend on http://localhost:5173
-   - PostgreSQL on localhost:5432
-
-4. **Local Development** (Backend):
-   ```bash
-   cd KidCurious-backend
-   composer install
-   php artisan migrate
-   composer run dev  # Runs server, queue, logs, and vite concurrently
-   ```
-
-## Testing Guidelines
-
-### Running Tests
-- **Backend Tests**: Use Pest PHP framework
-  ```bash
-  cd KidCurious-backend
-  composer run test
-  # or directly: php artisan test
-  ```
-
-### Test Requirements
-- Always run tests after making changes to ensure no regressions
-- Write tests for new features following Pest PHP conventions
-- Test coverage should include unit tests for domain logic and feature tests for API endpoints
-
-## Code Quality & Standards
-
-### Backend
-- **Code Style**: Use Laravel Pint for consistent formatting
-  ```bash
-  ./vendor/bin/pint
-  ```
-- **Architecture**: Follow Domain-Driven Design principles
-- **Packages**: Keep domain logic in respective packages under `packages/` directory
-- **PSR Standards**: Follow PSR-4 autoloading and PSR-12 coding standards
-
-### Frontend
-- **Styling**: Use TailwindCSS 4.0 classes
-- **TypeScript**: Use TypeScript for type safety in React components
-- **Components**: Follow React best practices and component composition
+## Environment Configuration
+- The API base URL should be `https://api.kidcurious.click/api`.
+- The frontend URL is `https://kidcurious.click`.
+- Supabase environment variables: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` and `SUPABASE_ANON_KEY` must be provided in `.env` for both backend and frontend.
+- Database configuration variables in `.env` should point to Supabase Postgres (host, port, database, user, password). No local database is expected.
+- Redis connection variables: `REDIS_HOST=redis`, `REDIS_PORT=6379`.
 
 ## Development Workflow
+1. Start containers with `docker-compose up --build`. This will build and run the backend on port 8000 locally and frontend on port 5173.
+2. Install PHP dependencies via Composer and NPM dependencies in the frontend container if they are missing.
+3. Run tests using Pest: `composer run test`. Add tests for each new feature [oai_citation:0‡raw.githubusercontent.com](https://raw.githubusercontent.com/d3vlab-org/kidcurious/main/.junie/guidelines.md#:~:text=%23%23%23%20Running%20Tests%20,directly%3A%20php%20artisan%20test).
+4. Run Pint before committing to enforce code style [oai_citation:1‡raw.githubusercontent.com](https://raw.githubusercontent.com/d3vlab-org/kidcurious/main/.junie/guidelines.md#:~:text=%23%23%23%20Backend%20,bash%20.%2Fvendor%2Fbin%2Fpint).
+5. Use Vite (`npm run dev`) to develop the frontend with hot reload.
+6. For production, deploy via Fly.io using `fly deploy`. Ensure environment variables (Supabase and OpenAI keys, `APP_URL`, `FRONTEND_URL`) are set in Fly secrets.
 
-### Before Submitting Changes
-1. **Run Tests**: Execute `composer run test` to ensure all tests pass
-2. **Code Formatting**: Run Laravel Pint to format code
-3. **Build Check**: Ensure the application builds successfully with Docker
-4. **Environment Variables**: Verify all required environment variables are documented
+## Coding Best Practices
+- Follow Domain‑Driven Design principles. Keep business logic inside domain services and avoid bloated controllers.
+- Store credentials and secrets only in environment variables; never commit them to the repository.
+- Write small, focused prompts to Junie. Large prompts can be broken down into follow‑ups.
+- Use context from this guidelines file whenever instructing Junie, e.g., “use Supabase Auth”, “backend uses Laravel 12 with Octane”, “frontend uses React with Tailwind”, etc.
 
-### Docker vs Local Development
-- **Docker**: Recommended for full-stack development and production-like environment
-- **Local**: Faster for backend-only development and debugging
-
-### Database Migrations
-- Always create migrations for database changes
-- Use `php artisan migrate` for applying migrations
-- Test migrations in both directions (up and down)
-
-## Important Notes
-
-### Directory Naming Discrepancy
-- Docker Compose references `./backend` and `./frontend`
-- Actual directories are `KidCurious-backend` and `KidCurious-front`
-- Update docker-compose.yml paths when deploying
-
-### AI Safety & Moderation
-- All AI responses go through the moderation service
-- Content filtering is critical for child safety
-- Test moderation rules thoroughly
-
-### Performance Considerations
-- Laravel Octane is configured for enhanced performance
-- Redis caching is available for frequently accessed data
-- WebSocket connections should be monitored for resource usage
+## Additional Tips
+- Because Junie can run commands and modify files [oai_citation:2‡jetbrains.com](https://www.jetbrains.com/help/junie/get-started-with-junie.html#:~:text=,progress%20of%20the%20task%20completion), avoid prompts that could cause destructive operations. Always review changes before committing.
+- If Junie shows unexpected behaviour, refine the guidelines or add clarifications. The guidelines file is re‑read each time, so updates will take effect immediately [oai_citation:3‡jetbrains.com](https://www.jetbrains.com/guide/ai/article/junie/intellij-idea/#:~:text=If%20you%20notice%20Junie%20doing,more%20effectively%20within%20your%20project).

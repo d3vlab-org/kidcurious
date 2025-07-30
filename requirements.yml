@@ -1,0 +1,47 @@
+# KidCurious project assumptions for Junie (English)
+hosting:
+  platform: "Fly.io"
+  domain_main: "kidcurious.click"
+  domain_api: "api.kidcurious.click"
+
+backend:
+  language: "PHP 8.3"
+  framework: "Laravel 12"
+  database: "Supabase PostgreSQL"
+  authentication: "Supabase"
+  cache: "Redis"
+  ai_integration: "OpenAI"
+  architecture: "Domain-Driven Design"
+  modules:
+    - "auth-service"
+    - "question-service"
+    - "moderation-service"
+    - "llm-gateway"
+    - "media-service"
+  real_time: "WebSockets"
+  moderation: true
+  url: "https://api.kidcurious.click/api"
+
+frontend:
+  framework: "React"
+  language: "TypeScript"
+  build_tool: "Vite"
+  styling: "Tailwind CSS 4.0"
+  api_client: "Axios"
+  auth_provider: "Supabase"
+  state_management: "React Context or Zustand"
+  supabase_integration: true
+  url: "https://kidcurious.click"
+
+security:
+  https_only: true
+  rate_limiting: true
+
+dev_practices:
+  testing:
+    backend: "Pest PHP"
+    frontend: "Jest/React Testing Library"
+  formatting:
+    backend: "Laravel Pint"
+    frontend: "Prettier/ESLint"
+  ci_cd: "GitHub Actions"
