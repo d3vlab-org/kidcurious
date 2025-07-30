@@ -1,0 +1,125 @@
+# .junie/junire.prompts.yml
+# Road-mapa sprintów dla projektu KidCurious (backend Laravel + frontend React)
+
+- sprint: S0
+  branch: junie/s0-bootstrap
+  prompt: |
+    You are Junie, an autonomous coding agent.
+    ## Sprint 0 – Bootstrap & CI
+    1. Verify that `docker-compose up` builds backend, frontend and database (Postgres, Redis).
+    2. Add GitHub Actions workflow `ci.yml` that runs:
+       - PHPStan + Pint (backend lint/format)
+       - ESLint + Prettier (frontend lint/format)
+       - PHPUnit (—even if 0 tests now, ensure stage exists)
+       - Vitest (frontend)
+       - Docker build for monorepo
+    3. Generate `junie.settings.json` with default code-style, branch prefix `junie/`, and repo PAT placeholder.
+    4. Update root `README.md` with “Getting Started” for local Docker.
+    Commit all changes and open a PR to `main`.
+
+- sprint: S1
+  branch: junie/s1-models
+  prompt: |
+    ## Sprint 1 – Domain models & migrations
+    Back-end (Laravel 12, PHP 8.3)
+    1. Create migrations for tables:
+       * users          (parents)
+       * children       (FK user_id, birth_year INT, avatar_url)
+       * questions      (child_id, text, status ENUM[pending,allowed,blocked])
+       * answers        (question_id, content, tokens_json, created_at)
+       * filters        (user_id, category ENUM[violence,sex,politics], pattern REGEX)
+       * logs           (user_id, action, meta JSON)
+    2. Generate corresponding Eloquent Models, Seeders (demo parent+child) and Factories.
+    3. Implement Policy gates for parent→child ownership checks.
+    4. Update `docker-compose.yml` and `.env.example` with SUPABASE connection vars.
+    Push branch and open PR.
+
+- sprint: S2
+  branch: junie/s2-auth-ask-endpoint
+  prompt: |
+    ## Sprint 2 – Auth + “Ask” endpoint
+    ### Backend
+    1. Add POST `/api/auth/login` – validate Supabase JWT (kid claim) and return Laravel Sanctum token.
+    2. Add POST `/api/ask` accepting `{child_id, text}`; store question with status `pending` and dispatch Redis job `ProcessQuestionJob`.
+    ### Frontend (React + Vite + Tailwind)
+    3. Build login screen; save token in `localStorage`.
+    4. Implement **Child Home** screen with microphone button (stub Web Speech API) and recent Q&A carousel (empty state OK).
+    5. Wire FormData → POST `/api/ask` after ASR stub returns text.
+    6. Update environment docs; PR to main.
+
+- sprint: S3
+  branch: junie/s3-streaming-answer
+  prompt: |
+    ## Sprint 3 – AI streaming answer
+    ### Backend
+    1. In `ProcessQuestionJob`:
+       * Run OpenAI Moderation; if flagged → update status `blocked`, emit event.
+       * Otherwise stream GPT-4o chat completion (temperature 0.4) and save chunks to `answers`.
+    2. Open WebSocket route `/answers/{id}` streaming tokens as they arrive.
+    ### Frontend
+    3. Create Hook `useAnswerStream(questionId)` using native WS.
+    4. Build **Answer View**: TTS play button (Google TTS), hero illustration placeholder, max 120 chars text.
+    5. Navigate to Answer View immediately after `/ask` succeeds.
+    Commit + PR.
+
+- sprint: S4
+  branch: junie/s4-parent-dashboard
+  prompt: |
+    ## Sprint 4 – Parent dashboard & filters
+    ### Backend
+    1. Routes:
+       * GET `/api/flags` – list questions with status `blocked`.
+       * GET `/api/history` – paginated Q&A for given child.
+       * PUT `/api/filters` – CRUD regex/category filters.
+    2. CSV export helper returning signed URL.
+    ### Frontend
+    3. Create Parent Dashboard with tabs:
+       Inbox (flags) • History • Filters • Settings.
+    4. Implement table components, search bar, CSV export button.
+    5. Quiet hours and delete-data dialogs in Settings (calls stub endpoints).
+    Unit tests 70 % for new pages.  PR.
+
+- sprint: S5
+  branch: junie/s5-video-profiles
+  prompt: |
+    ## Sprint 5 – YouTube Kids & profile switcher
+    ### Backend
+    1. Endpoint `/api/video-suggestions?prompt=` → YouTube Data API v3 with `safeSearch=strict` & `kidsContentVersion=global`.
+    ### Frontend
+    2. Component **VideoSuggestion**: show thumbnail → tap opens `<iframe>` (720p cap).
+    3. Widget **ProfileCardsSwiper**—max 4 kids, pastel avatars; long-press to edit avatar.
+    4. Hook routing so each child context filters history, answers etc.
+    5. E2E test: create 2 children, switch, ask, watch video.  PR.
+
+- sprint: S6
+  branch: junie/s6-i18n-accessibility
+  prompt: |
+    ## Sprint 6 – Internationalisation & accessibility
+    1. Integrate `react-i18next` with `pl.json` (default) + `en.json`.
+    2. Extract all hard-coded strings; add language toggle in Settings.
+    3. Helper `formatCopyByAge(age, key)` chooses pre-reader vs early-reader variants.
+    4. Lighthouse a11y script in CI – score ≥ 90.
+    5. Docs update (`LOCALISATION.md`).  PR.
+
+- sprint: S7
+  branch: junie/s7-tests-telemetry
+  prompt: |
+    ## Sprint 7 – Tests & telemetry
+    1. Backend: write PestPHP unit + feature tests to reach 80 % coverage; add Health-check route `/health`.
+    2. Frontend: Vitest + RTL unit tests (components/services) + Cypress flow (login → ask → answer).
+    3. Integrate Sentry (dsn via env) and OpenTelemetry traces; expose Prometheus metrics on `/metrics`.
+    4. Add Grafana dashboard JSON template to `ops/`.
+    Update CI badge with coverage %.  PR.
+
+- sprint: S8
+  branch: junie/s8-release-mvp
+  prompt: |
+    ## Sprint 8 – MVP release
+    1. Write Fly.io deployment scripts:
+       * `fly deploy backend` (Laravel Octane + Swoole)
+       * `fly deploy frontend` (Vite static)
+    2. Add GitHub Action to deploy on tag `v*`.
+    3. Create semantic-versioning workflow; tag `v0.1.0` after green pipeline.
+    4. Final RODO/COPPA checklist in `COMPLIANCE.md`; update README badges.
+    5. Close all open GitHub Projects and generate release notes.
+    PR to `main`, approve, and trigger production deploy.
